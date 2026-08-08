@@ -1,9 +1,10 @@
 model Patient {
   id     String @id @default(uuid())
   userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  fullName    String
+  name        String
+  email       String      @unique
   phone       String?
   dateOfBirth DateTime?
   gender      UserGender?
@@ -12,8 +13,9 @@ model Patient {
   bloodGroup       String?
   emergencyContact String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@map("patients")
 }
