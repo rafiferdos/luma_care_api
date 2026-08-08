@@ -1,0 +1,18 @@
+model User {
+  id                 String       @id @default(uuid())
+  email              String       @unique
+  password           String? // nullable — Google-only patient has none until they set one
+  authProvider       AuthProvider @default(CREDENTIALS)
+  googleId           String?      @unique
+  role               UserRole
+  status             UserStatus   @default(ACTIVE)
+  isEmailVerified    Boolean      @default(false)
+  mustChangePassword Boolean      @default(false) // forced after Admin/Super Admin creation
+
+  patient Patient?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
