@@ -11,7 +11,10 @@
 		"format:check": "npx @biomejs/biome format ./src",
 		"format:fix": "npx @biomejs/biome format --write ./src",
 		"lint:check": "npx @biomejs/biome lint ./src",
-		"lint:fix": "npx @biomejs/biome lint --write ./src"
+		"lint:fix": "npx @biomejs/biome lint --write ./src",
+		"db:generate": "prisma generate",
+		"db:migrate": "prisma migrate dev",
+		"db:studio": "prisma studio"
 	},
 	"keywords": [],
 	"author": "",
@@ -37,7 +40,7 @@
 		"typescript": "^7.0.2"
 	},
 	"dependencies": {
-		"@types/dotenv": "^8.2.3",
+		"@prisma/adapter-pg": "^7.9.1",
 		"cookie-parser": "^1.4.7",
 		"cors": "^2.8.6",
 		"dotenv": "^17.4.2",
