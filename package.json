@@ -25,6 +25,7 @@
 		"@types/jsonwebtoken": "^9.0.10",
 		"@types/node": "^26.1.2",
 		"@types/pg": "^8.20.4",
+		"prisma": "^7.9.1",
 		"tsx": "^4.23.11",
 		"typescript": "^7.0.2"
 	},
@@ -35,7 +36,6 @@
 		"express": "^5.2.1",
 		"http-status": "^2.1.0",
 		"jsonwebtoken": "^9.0.3",
-		"pg": "^8.22.0",
-		"prisma": "^7.9.1"
+		"pg": "^8.22.0"
 	}
 }

@@ -228,9 +228,6 @@ importers:
       pg:
         specifier: ^8.22.0
         version: 8.22.0
-      prisma:
-        specifier: ^7.9.1
-        version: 7.9.1(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.5.7
@@ -253,6 +250,9 @@ importers:
       '@types/pg':
         specifier: ^8.20.4
         version: 8.20.4
+      prisma:
+        specifier: ^7.9.1
+        version: 7.9.1(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)
       tsx:
         specifier: ^4.23.11
         version: 4.23.11
