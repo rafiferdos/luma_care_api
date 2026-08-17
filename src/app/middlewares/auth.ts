@@ -1,10 +1,11 @@
 import type { NextFunction, Request, Response } from 'express'
 import status from 'http-status'
-import JwtUtils from '../../utils/jwt';
-import config from '../config';
-import catchAsync from '../../utils/catchAsync';
-import { AppError } from '../../utils/appError';
-import { prisma } from '../lib/prisma';
+import type { UserRole } from '../../../prisma/generated/prisma/enums'
+import { AppError } from '../../utils/appError'
+import catchAsync from '../../utils/catchAsync'
+import JwtUtils from '../../utils/jwt'
+import config from '../config'
+import { prisma } from '../lib/prisma'
 
 type TVerifyResult<T> =
   | Readonly<{ ok: true; payload: T }>
