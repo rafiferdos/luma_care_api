@@ -1,6 +1,6 @@
+import { isAppError } from '@/utils/appError'
 import type { NextFunction, Request, Response } from 'express'
-import { Prisma } from '../../../generated/prisma/client'
-import { isAppError } from '../../utils/appError'
+import { Prisma } from '../../../prisma/generated/prisma/client'
 
 /* ------------------------------------------------------------------ */
 /*  Prisma error → { statusCode, message } normalizer                 */
