@@ -1,9 +1,11 @@
 import type { Request, Response } from 'express'
 import status from 'http-status'
+
 import config from '@/app/config/index.js'
 import { AppError } from '@/utils/appError.js'
 import catchAsync from '@/utils/catchAsync.js'
 import sendResponse from '@/utils/sendResponse.js'
+
 import { AuthServices } from './auth.service.js'
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {

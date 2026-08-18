@@ -3,10 +3,13 @@ import crypto from 'crypto'
 import type { TokenPayload } from 'google-auth-library'
 import status from 'http-status'
 import type { JwtPayload } from 'jsonwebtoken'
+
 import config from '@/app/config/index.js'
 import { verifyGoogleToken } from '@/app/lib/googleAuth.js'
+import { prisma } from '@/app/lib/prisma.js'
 import { AppError } from '@/utils/appError.js'
 import { JwtUtils } from '@/utils/jwt.js'
+
 import {
   UserRole,
   UserStatus
@@ -15,7 +18,6 @@ import type {
   ILoginCredentials,
   IRegisterUserPayload
 } from './auth.interface.js'
-import { prisma } from '@/app/lib/prisma.js'
 
 const loginUserIntoDB = async (payload: ILoginCredentials) => {
   const { email, password } = payload

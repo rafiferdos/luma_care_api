@@ -1,5 +1,7 @@
-import { isAppError } from '@/utils/appError'
 import type { NextFunction, Request, Response } from 'express'
+
+import { isAppError } from '@/utils/appError'
+
 import { Prisma } from '../../../prisma/generated/prisma/client'
 
 /* ------------------------------------------------------------------ */

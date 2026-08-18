@@ -1,18 +1,3 @@
-/* ------------------------------------------------------------------ */
-/*  AppError — the ONE error class the entire app throws intentionally */
-/*                                                                    */
-/*  Key concept: isOperational                                        */
-/*  ─────────────────────────────────────────────────────────────────  */
-/*  true  → known, expected error (404, 401, validation fail…)       */
-/*          global handler can safely expose message + errors         */
-/*  false → unexpected bug / programmer error / library crash         */
-/*          global handler must hide details and send generic 500     */
-/*                                                                    */
-/*  Plain `Error` objects from libraries or runtime crashes are NEVER */
-/*  isOperational — the handler checks `instanceof AppError` and      */
-/*  treats everything else as a hidden internal failure.              */
-/* ------------------------------------------------------------------ */
-
 type TAppErrorOptions = {
   // Structured error details — e.g. Prisma field conflicts, custom issues.
   // `unknown` so callers never need to cast; handler decides serialization.
