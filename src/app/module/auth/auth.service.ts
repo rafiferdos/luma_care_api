@@ -153,96 +153,157 @@ const getMeFromDB = async (userId: string) => {
 }
 
 const googleLoginIntoDB = async (credential: string) => {
-  let payload: TokenPayload | undefined | null = null
+  if (!credential || typeof credential !== 'string') {
+    throw new AppError(
+      status.BAD_REQUEST,
+      'Google credential is required'
+    )
+  }
+
+  let payload: TokenPayload | undefined | null
+
+  // Only Google token verification errors should become "invalid credentials"
   try {
     payload = await verifyGoogleToken(credential)
-    if (!payload?.email)
-      throw new AppError(status.UNAUTHORIZED, 'Invalid Google credential')
+  } catch {
+    throw new AppError(
+      status.UNAUTHORIZED,
+      'Invalid Google credentials'
+    )
+  }
 
-    let user = await prisma.user.findUnique({ where: { email: payload.email } })
+  // Required claims
+  if (
+    !payload?.sub ||
+    !payload.email ||
+    payload.email_verified !== true
+  ) {
+    throw new AppError(
+      status.UNAUTHORIZED,
+      'Invalid Google credentials'
+    )
+  }
 
-    if (!user) {
-      const randomPassword = await bcrypt.hash(
-        crypto.randomBytes(16).toString('hex'),
-        Number(config.bcrypt_salt_rounds)
+  const email = payload.email.trim().toLowerCase()
+
+  // 1. Prefer lookup by Google's stable user ID
+  let user = await prisma.user.findUnique({
+    where: {
+      googleId: payload.sub
+    }
+  })
+
+  // A googleId must never belong to a different email
+  if (user && user.email.toLowerCase() !== email) {
+    throw new AppError(
+      status.UNAUTHORIZED,
+      'Invalid Google credentials'
+    )
+  }
+
+  // 2. Fallback to email lookup for an existing account
+  if (!user) {
+    user = await prisma.user.findUnique({
+      where: {
+        email
+      }
+    })
+  }
+
+  // 3. Existing account checks
+  if (user) {
+    if (user.role !== UserRole.PATIENT) {
+      throw new AppError(
+        status.FORBIDDEN,
+        'Google login is only available for patient accounts.'
       )
-      const fallbackName =
-        payload.name?.trim() || payload.email.split('@')[0] || 'Patient'
-
-      user = await prisma.user.create({
-        data: {
-          name: fallbackName,
-          email: payload.email,
-          password: randomPassword,
-          role: UserRole.PATIENT,
-          profileImage: payload.picture ?? null
-        }
-      })
     }
 
-    if (user.status === UserStatus.BLOCKED)
+    if (user.status === UserStatus.BLOCKED) {
       throw new AppError(
         status.FORBIDDEN,
         'Your account has been BLOCKED. Please contact support.'
       )
-    if (!payload.email)
-      throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
-    if (!payload.name) 
-      throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
+    }
 
-    const patientExistsWithGoogle = await prisma.user.findUnique({
-      where: {
-        email: payload.email,
-        role: UserRole.PATIENT
+    if (user.status === UserStatus.DELETED || user.isDeleted) {
+      throw new AppError(
+        status.FORBIDDEN,
+        'This account is no longer available.'
+      )
+    }
+
+    // Link existing patient account to Google
+    if (!user.googleId) {
+      user = await prisma.user.update({
+        where: {
+          id: user.id
+        },
+        data: {
+          googleId: payload.sub,
+          authProvider: AuthProvider.GOOGLE,
+          isEmailVerified: true
+        }
+      })
+    }
+  }
+
+  // 4. New Google patient
+  if (!user) {
+    const name =
+      payload.name?.trim() ||
+      email.split('@')[0] ||
+      'Patient'
+
+    user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: null,
+        role: UserRole.PATIENT,
+        googleId: payload.sub,
+        authProvider: AuthProvider.GOOGLE,
+        isEmailVerified: true,
+
+        patient: {
+          create: {
+            name,
+            email,
+            status: UserStatus.ACTIVE
+          }
+        }
       }
     })
-    if (!patientExistsWithGoogle) throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
+  }
 
-      let googleUser = patientExistsWithGoogle
-      if(!googleUser ) {
-        googleUser = await prisma.user.create({
-          data: {
-            name: payload.name,
-            email: payload.email,
-            role: UserRole.PATIENT,
-            googleId: payload.sub,
-            authProvider: AuthProvider.GOOGLE,
-            isEmailVerified: true,
-            patient: {
-              create: {
-                name: payload.name,
-                email: payload.email,
-                status: UserStatus.ACTIVE
-              }
-            }
-          }
-        })
-      }
-      const jwtPayload = {
-        id: googleUser.id,
-        name: googleUser.name,
-        email: googleUser.email,
-        role: googleUser.role
-      }
-      const accessToken = JwtUtils.createAuthTokens(jwtPayload, {
-        accessSecret: config.jwt_access_secret,
-        accessExpiresIn: config.jwt_access_expires_in,
-        refreshSecret: config.jwt_refresh_secret,
-        refreshExpiresIn: config.jwt_refresh_expires_in
-      })
-      const refreshToken = JwtUtils.createAuthTokens(jwtPayload, {
-        accessSecret: config.jwt_access_secret,
-        accessExpiresIn: config.jwt_access_expires_in,
-        refreshSecret: config.jwt_refresh_secret,
-        refreshExpiresIn: config.jwt_refresh_expires_in
-      })
-      return {
-        accessToken,
-        refreshToken,
-      }
+  // 5. Create our own JWTs
+  const jwtPayload = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role
+  }
 
-  } catch {
-    throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
+  const { accessToken, refreshToken } =
+    JwtUtils.createAuthTokens(jwtPayload, {
+      accessSecret: config.jwt_access_secret,
+      accessExpiresIn: config.jwt_access_expires_in,
+      refreshSecret: config.jwt_refresh_secret,
+      refreshExpiresIn: config.jwt_refresh_expires_in
+    })
+
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      authProvider: user.authProvider,
+      isEmailVerified: user.isEmailVerified
+    }
   }
 }
 
