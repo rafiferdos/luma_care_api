@@ -1,12 +1,16 @@
-import config from '@/config/index.js'
-import { verifyGoogleToken } from '@/lib/googleAuth.js'
-import { prisma } from '@/lib/prisma.js'
-import { AppError } from '@/utils/appError.js'
-import { JwtUtils } from '@/utils/jwt.js'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import status from 'http-status'
 import type { JwtPayload } from 'jsonwebtoken'
+import config from '@/app/config/index.js'
+import { verifyGoogleToken } from '@/app/lib/googleAuth.js'
+import { prisma } from '@/app/lib/prisma.js'
+import { AppError } from '@/utils/appError.js'
+import { JwtUtils } from '@/utils/jwt.js'
+import {
+  UserRole,
+  UserStatus
+} from '../../../../prisma/generated/prisma/enums.js'
 import type {
   ILoginCredentials,
   IRegisterUserPayload
@@ -38,10 +42,10 @@ const loginUserIntoDB = async (payload: ILoginCredentials) => {
   }
 
   const { accessToken, refreshToken } = JwtUtils.createAuthTokens(jwtPayload, {
-    accessSecret: config.jwtSecret,
-    accessExpiresIn: config.jwtExpiresIn,
-    refreshSecret: config.jwtRefreshSecret,
-    refreshExpiresIn: config.jwtRefreshExpiresIn
+    accessSecret: config.jwt_access_secret,
+    accessExpiresIn: config.jwt_access_expires_in,
+    refreshSecret: config.jwt_refresh_secret,
+    refreshExpiresIn: config.jwt_refresh_expires_in
   })
 
   const { password: _pw, ...safeUser } = user
@@ -56,7 +60,7 @@ const loginUserIntoDB = async (payload: ILoginCredentials) => {
 const refreshToken = async (token: string) => {
   const decoded = JwtUtils.verifyToken<JwtPayload>(
     token,
-    config.jwtRefreshSecret
+    config.jwt_refresh_secret
   )
 
   const { id } = decoded
@@ -75,10 +79,10 @@ const refreshToken = async (token: string) => {
   }
 
   const { accessToken } = JwtUtils.createAuthTokens(jwtPayload, {
-    accessSecret: config.jwtSecret,
-    accessExpiresIn: config.jwtExpiresIn,
-    refreshSecret: config.jwtRefreshSecret,
-    refreshExpiresIn: config.jwtRefreshExpiresIn
+    accessSecret: config.jwt_access_secret,
+    accessExpiresIn: config.jwt_access_expires_in,
+    refreshSecret: config.jwt_refresh_secret,
+    refreshExpiresIn: config.jwt_refresh_expires_in
   })
 
   return { accessToken }
@@ -95,17 +99,17 @@ const registerUserIntoDB = async (payload: IRegisterUserPayload) => {
 
   const passwordHash = await bcrypt.hash(
     password,
-    Number(config.bcryptSaltRounds)
+    Number(config.bcrypt_salt_rounds)
   )
 
-  if (payload.role === 'ADMIN') {
+  if (payload.role === UserRole.SUPER_ADMIN) {
     const adminExists = await prisma.user.findFirst({
-      where: { role: 'ADMIN' }
+      where: { role: UserRole.SUPER_ADMIN }
     })
     if (adminExists)
       throw new AppError(
         status.CONFLICT,
-        'An admin already exists. You cannot create multiple admin accounts.'
+        'An super admin already exists. You cannot create multiple super admin accounts.'
       )
   }
 
@@ -154,26 +158,26 @@ const googleLoginIntoDB = async (credential: string) => {
   if (!user) {
     const randomPassword = await bcrypt.hash(
       crypto.randomBytes(16).toString('hex'),
-      Number(config.bcryptSaltRounds)
+      Number(config.bcrypt_salt_rounds)
     )
     const fallbackName =
-      payload.name?.trim() || payload.email.split('@')[0] || 'User'
+      payload.name?.trim() || payload.email.split('@')[0] || 'Patient'
 
     user = await prisma.user.create({
       data: {
         name: fallbackName,
         email: payload.email,
         password: randomPassword,
-        role: 'CUSTOMER',
+        role: UserRole.PATIENT,
         profileImage: payload.picture ?? null
       }
     })
   }
 
-  if (user.status === 'BANNED')
+  if (user.status === UserStatus.BLOCKED)
     throw new AppError(
       status.FORBIDDEN,
-      'Your account has been banned. Please contact support.'
+      'Your account has been BLOCKED. Please contact support.'
     )
 
   const jwtPayload = {
@@ -183,10 +187,10 @@ const googleLoginIntoDB = async (credential: string) => {
     role: user.role
   }
   const { accessToken, refreshToken } = JwtUtils.createAuthTokens(jwtPayload, {
-    accessSecret: config.jwtSecret,
-    accessExpiresIn: config.jwtExpiresIn,
-    refreshSecret: config.jwtRefreshSecret,
-    refreshExpiresIn: config.jwtRefreshExpiresIn
+    accessSecret: config.jwt_access_secret,
+    accessExpiresIn: config.jwt_access_expires_in,
+    refreshSecret: config.jwt_refresh_secret,
+    refreshExpiresIn: config.jwt_refresh_expires_in
   })
 
   const { password: _pw, ...safeUser } = user
