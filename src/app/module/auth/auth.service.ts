@@ -11,6 +11,7 @@ import { AppError } from '@/utils/appError.js'
 import { JwtUtils } from '@/utils/jwt.js'
 
 import {
+    AuthProvider,
   UserRole,
   UserStatus
 } from '../../../../prisma/generated/prisma/enums.js'
@@ -186,27 +187,53 @@ const googleLoginIntoDB = async (credential: string) => {
       )
     if (!payload.email)
       throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
+    if (!payload.name) 
+      throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
 
-    const patientExistsWithGoogle = await prisma.user
+    const patientExistsWithGoogle = await prisma.user.findUnique({
+      where: {
+        email: payload.email,
+        role: UserRole.PATIENT
+      }
+    })
+    if (!patientExistsWithGoogle) throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
 
-    const jwtPayload = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    }
-    const { accessToken, refreshToken } = JwtUtils.createAuthTokens(
-      jwtPayload,
-      {
+      let googleUser = patientExistsWithGoogle
+      if(!googleUser ) {
+        googleUser = await prisma.user.create({
+          data: {
+            name: payload.name,
+            email: payload.email,
+            role: UserRole.PATIENT,
+            googleId: payload.sub,
+            authProvider: AuthProvider.GOOGLE,
+          }
+        })
+      }
+      const jwtPayload = {
+        id: googleUser.id,
+        name: googleUser.name,
+        email: googleUser.email,
+        role: googleUser.role
+      }
+      const accessToken = JwtUtils.createAuthTokens(jwtPayload, {
         accessSecret: config.jwt_access_secret,
         accessExpiresIn: config.jwt_access_expires_in,
         refreshSecret: config.jwt_refresh_secret,
         refreshExpiresIn: config.jwt_refresh_expires_in
+      })
+      const refreshToken = JwtUtils.createAuthTokens(jwtPayload, {
+        accessSecret: config.jwt_access_secret,
+        accessExpiresIn: config.jwt_access_expires_in,
+        refreshSecret: config.jwt_refresh_secret,
+        refreshExpiresIn: config.jwt_refresh_expires_in
+      })
+      return {
+        accessToken,
+        refreshToken,
+        user: googleUser
       }
-    )
 
-    const { password: _pw, ...safeUser } = user
-    return { accessToken, refreshToken, user: safeUser }
   } catch {
     throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
   }
