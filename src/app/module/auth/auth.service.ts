@@ -207,6 +207,13 @@ const googleLoginIntoDB = async (credential: string) => {
             role: UserRole.PATIENT,
             googleId: payload.sub,
             authProvider: AuthProvider.GOOGLE,
+            patient: {
+              create: {
+                name: payload.name,
+                email: payload.email,
+                status: UserStatus.ACTIVE
+              }
+            }
           }
         })
       }
@@ -231,7 +238,6 @@ const googleLoginIntoDB = async (credential: string) => {
       return {
         accessToken,
         refreshToken,
-        user: googleUser
       }
 
   } catch {
