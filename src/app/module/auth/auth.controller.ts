@@ -1,9 +1,9 @@
-import config from '@/config/index.js'
+import type { Request, Response } from 'express'
+import status from 'http-status'
+import config from '@/app/config/index.js'
 import { AppError } from '@/utils/appError.js'
 import catchAsync from '@/utils/catchAsync.js'
 import sendResponse from '@/utils/sendResponse.js'
-import type { Request, Response } from 'express'
-import status from 'http-status'
 import { AuthServices } from './auth.service.js'
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
@@ -13,14 +13,14 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
   res.cookie('refreshToken', result.refreshToken, {
     httpOnly: true,
     secure: config.isProduction,
-    sameSite: config.isProduction ? 'none' : 'lax',
+    sameSite: config.isProduction ? ('none' as const) : ('lax' as const),
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   })
 
   res.cookie('accessToken', result.accessToken, {
     httpOnly: true,
     secure: config.isProduction,
-    sameSite: config.isProduction ? 'none' : 'lax',
+    sameSite: config.isProduction ? ('none' as const) : ('lax' as const),
     maxAge: 15 * 60 * 1000 // 15 minutes
   })
 
@@ -43,7 +43,7 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
     secure: config.isProduction,
-    sameSite: config.isProduction ? 'none' : 'lax',
+    sameSite: config.isProduction ? ('none' as const) : ('lax' as const),
     maxAge: 15 * 60 * 1000 // 15 minutes
   })
 
@@ -87,13 +87,13 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
   res.cookie('refreshToken', result.refreshToken, {
     httpOnly: true,
     secure: config.isProduction,
-    sameSite: config.isProduction ? 'none' : 'lax',
+    sameSite: config.isProduction ? ('none' as const) : ('lax' as const),
     maxAge: 7 * 24 * 60 * 60 * 1000
   })
   res.cookie('accessToken', result.accessToken, {
     httpOnly: true,
     secure: config.isProduction,
-    sameSite: config.isProduction ? 'none' : 'lax',
+    sameSite: config.isProduction ? ('none' as const) : ('lax' as const),
     maxAge: 15 * 60 * 1000
   })
 
