@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs'
-import crypto from 'crypto'
 import type { TokenPayload } from 'google-auth-library'
 import status from 'http-status'
 import type { JwtPayload } from 'jsonwebtoken'
