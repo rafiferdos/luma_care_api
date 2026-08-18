@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import type { TokenPayload } from 'google-auth-library'
 import status from 'http-status'
 import type { JwtPayload } from 'jsonwebtoken'
 import config from '@/app/config/index.js'
@@ -149,52 +150,60 @@ const getMeFromDB = async (userId: string) => {
 }
 
 const googleLoginIntoDB = async (credential: string) => {
-  const payload = await verifyGoogleToken(credential)
-  if (!payload?.email)
-    throw new AppError(status.UNAUTHORIZED, 'Invalid Google credential')
+  let payload: TokenPayload | undefined | null = null
+  try {
+    payload = await verifyGoogleToken(credential)
+    if (!payload?.email)
+      throw new AppError(status.UNAUTHORIZED, 'Invalid Google credential')
 
-  let user = await prisma.user.findUnique({ where: { email: payload.email } })
+    let user = await prisma.user.findUnique({ where: { email: payload.email } })
 
-  if (!user) {
-    const randomPassword = await bcrypt.hash(
-      crypto.randomBytes(16).toString('hex'),
-      Number(config.bcrypt_salt_rounds)
-    )
-    const fallbackName =
-      payload.name?.trim() || payload.email.split('@')[0] || 'Patient'
+    if (!user) {
+      const randomPassword = await bcrypt.hash(
+        crypto.randomBytes(16).toString('hex'),
+        Number(config.bcrypt_salt_rounds)
+      )
+      const fallbackName =
+        payload.name?.trim() || payload.email.split('@')[0] || 'Patient'
 
-    user = await prisma.user.create({
-      data: {
-        name: fallbackName,
-        email: payload.email,
-        password: randomPassword,
-        role: UserRole.PATIENT,
-        profileImage: payload.picture ?? null
+      user = await prisma.user.create({
+        data: {
+          name: fallbackName,
+          email: payload.email,
+          password: randomPassword,
+          role: UserRole.PATIENT,
+          profileImage: payload.picture ?? null
+        }
+      })
+    }
+
+    if (user.status === UserStatus.BLOCKED)
+      throw new AppError(
+        status.FORBIDDEN,
+        'Your account has been BLOCKED. Please contact support.'
+      )
+
+    const jwtPayload = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
+    const { accessToken, refreshToken } = JwtUtils.createAuthTokens(
+      jwtPayload,
+      {
+        accessSecret: config.jwt_access_secret,
+        accessExpiresIn: config.jwt_access_expires_in,
+        refreshSecret: config.jwt_refresh_secret,
+        refreshExpiresIn: config.jwt_refresh_expires_in
       }
-    })
-  }
-
-  if (user.status === UserStatus.BLOCKED)
-    throw new AppError(
-      status.FORBIDDEN,
-      'Your account has been BLOCKED. Please contact support.'
     )
 
-  const jwtPayload = {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role
+    const { password: _pw, ...safeUser } = user
+    return { accessToken, refreshToken, user: safeUser }
+  } catch {
+    throw new AppError(status.UNAUTHORIZED, 'Invalid Google credential')
   }
-  const { accessToken, refreshToken } = JwtUtils.createAuthTokens(jwtPayload, {
-    accessSecret: config.jwt_access_secret,
-    accessExpiresIn: config.jwt_access_expires_in,
-    refreshSecret: config.jwt_refresh_secret,
-    refreshExpiresIn: config.jwt_refresh_expires_in
-  })
-
-  const { password: _pw, ...safeUser } = user
-  return { accessToken, refreshToken, user: safeUser }
 }
 
 export const AuthServices = {
