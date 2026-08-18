@@ -5,7 +5,6 @@ import status from 'http-status'
 import type { JwtPayload } from 'jsonwebtoken'
 import config from '@/app/config/index.js'
 import { verifyGoogleToken } from '@/app/lib/googleAuth.js'
-import { prisma } from '@/app/lib/prisma.js'
 import { AppError } from '@/utils/appError.js'
 import { JwtUtils } from '@/utils/jwt.js'
 import {
@@ -16,6 +15,7 @@ import type {
   ILoginCredentials,
   IRegisterUserPayload
 } from './auth.interface.js'
+import { prisma } from '@/app/lib/prisma.js'
 
 const loginUserIntoDB = async (payload: ILoginCredentials) => {
   const { email, password } = payload
@@ -182,6 +182,10 @@ const googleLoginIntoDB = async (credential: string) => {
         status.FORBIDDEN,
         'Your account has been BLOCKED. Please contact support.'
       )
+    if (!payload.email)
+      throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
+
+    const patientExistsWithGoogle = await prisma.user
 
     const jwtPayload = {
       id: user.id,
@@ -202,7 +206,7 @@ const googleLoginIntoDB = async (credential: string) => {
     const { password: _pw, ...safeUser } = user
     return { accessToken, refreshToken, user: safeUser }
   } catch {
-    throw new AppError(status.UNAUTHORIZED, 'Invalid Google credential')
+    throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
   }
 }
 
