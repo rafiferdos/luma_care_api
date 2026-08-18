@@ -207,6 +207,7 @@ const googleLoginIntoDB = async (credential: string) => {
             role: UserRole.PATIENT,
             googleId: payload.sub,
             authProvider: AuthProvider.GOOGLE,
+            isEmailVerified: true,
             patient: {
               create: {
                 name: payload.name,
