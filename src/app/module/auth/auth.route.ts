@@ -5,7 +5,7 @@ import { factory } from '@/factory'
 import { sValidator } from '@hono/standard-validator'
 import type { Context } from 'hono'
 import { getCookie, setCookie } from 'hono/cookie'
-import { loginSchema, registerSchema } from './auth.schema'
+import { googleLoginSchema, loginSchema, registerSchema } from './auth.schema'
 import { validationHook } from '@/utils/validation'
 import { AuthServices } from './auth.service'
 import { sendResponse } from '@/utils/sendResponse'
@@ -122,3 +122,25 @@ authRoutes.get('/me', async (c) => {
     data: user
   })
 })
+
+authRoutes.post(
+  '/google',
+  sValidator('json', googleLoginSchema, validationHook),
+  async (c) => {
+    const { credential } = c.req.valid('json')
+
+    const result = await AuthServices.googleLogin(credential)
+
+    setAuthCookies(c, result.accessToken, result.refreshToken)
+
+    return sendResponse(c, {
+      message: 'Logged in with Google successfully',
+      data: {
+        accessToken: result.accessToken,
+        user: result.user
+      }
+    })
+  }
+)
+
+export const AuthRoutes = authRoutes
