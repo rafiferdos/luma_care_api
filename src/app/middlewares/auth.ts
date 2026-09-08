@@ -1,4 +1,3 @@
-import { getCookie } from 'hono/cookie'
 import status from 'http-status'
 
 import {
@@ -11,6 +10,7 @@ import { AppError } from '../../utils/appError.js'
 import JwtUtils from '../../utils/jwt.js'
 import config from '../config/index.js'
 import { prisma } from '../lib/prisma.js'
+import { getAccessTokenCookie } from '../../utils/authCookie.js'
 
 type AccessTokenPayload = {
   id: string
@@ -39,7 +39,7 @@ export const auth = (...allowedRoles: UserRole[]) =>
   factory.createMiddleware(async (c, next) => {
     const token = extractToken(
       c.req.header('Authorization'),
-      getCookie(c, 'accessToken')
+      getAccessTokenCookie(c)
     )
 
     if (!token) {
