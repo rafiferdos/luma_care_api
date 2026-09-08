@@ -6,6 +6,10 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import config from './app/config'
+import {
+  globalErrorHandler,
+  notFoundHandler
+} from './app/middlewares/globalErrorHandler'
 
 // import config from './app/config'
 // import globalErrorHandler from './app/middlewares/globalErrorHandler'
@@ -56,8 +60,11 @@ app.use(
 app.get('/', (c) => {
   return c.json({
     success: true,
-    message: 'Welcome to LumaCare Backend'
+    message: 'Welcome to LumaCare API'
   })
 })
+
+app.notFound(notFoundHandler)
+app.onError(globalErrorHandler)
 
 export default app
