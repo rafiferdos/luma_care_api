@@ -53,9 +53,9 @@ type SendResponseOptions<
   TData,
   TMeta,
   TErrors
-> = S extends ApiSuccessStatus
-  ? SuccessOptions<S, TData, TMeta>
-  : ErrorOptions<Extract<S, ApiErrorStatus>, TErrors>
+> = [S] extends [ApiErrorStatus]
+  ? ErrorOptions<Extract<S, ApiErrorStatus>, TErrors>
+  : SuccessOptions<Extract<S, ApiSuccessStatus>, TData, TMeta>
 
 const getDefaultMessage = (statusCode: ApiStatus) => {
   if (statusCode === 201) return 'Created successfully'
