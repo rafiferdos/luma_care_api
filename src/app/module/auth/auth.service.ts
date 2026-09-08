@@ -14,11 +14,7 @@ import {
   UserRole,
   UserStatus
 } from '../../../../prisma/generated/prisma/enums.js'
-import type {
-  GoogleLoginInput,
-  LoginInput,
-  RegisterInput
-} from './auth.schema.js'
+import type { LoginInput, RegisterInput } from './auth.schema.js'
 
 const loginUserIntoDB = async (payload: LoginInput) => {
   const { email, password } = payload
