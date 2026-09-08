@@ -1,123 +1,140 @@
-import type { Response } from 'express'
+import type { Context } from 'hono'
+import type {
+  ClientErrorStatusCode,
+  ServerErrorStatusCode,
+  SuccessStatusCode
+} from 'hono/utils/http-status'
 
-/* -------------------------------------------------------------------------- */
-/*                                 STATUS CODES                               */
-/* -------------------------------------------------------------------------- */
+type ApiSuccessStatus = Exclude<SuccessStatusCode, 204 | 205>
+type ApiErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode
+type ApiStatus = ApiSuccessStatus | ApiErrorStatus
 
-type SuccessStatusCode = 200 | 201 | 202
-type NoContentStatusCode = 204
+type ResponseHeaders =
+  | Headers
+  | Record<string, string>
+  | Array<[string, string]>
 
-type ErrorStatusCode =
-  400 | 401 | 403 | 404 | 405 | 409 | 410 | 422 | 429 | 500 | 502 | 503
-
-/* -------------------------------------------------------------------------- */
-/*                                    META                                    */
-/* -------------------------------------------------------------------------- */
-
-type TMeta = Readonly<{
+export type PaginationMeta = Readonly<{
   page: number
   limit: number
   total: number
   totalPages: number
 }>
 
-/* -------------------------------------------------------------------------- */
-/*                                  PAYLOADS                                  */
-/* -------------------------------------------------------------------------- */
-
-type SuccessResponse<T> = Readonly<{
-  statusCode: SuccessStatusCode
+type SuccessOptions<
+  S extends ApiSuccessStatus,
+  TData,
+  TMeta
+> = Readonly<{
+  statusCode?: S
   message?: string
-  data?: T | null
+  data?: TData | null
   meta?: TMeta
+  headers?: ResponseHeaders
 
   errors?: never
 }>
 
-type NoContentResponse = Readonly<{
-  statusCode: NoContentStatusCode
-
-  message?: never
-  data?: never
-  meta?: never
-  errors?: never
-}>
-
-type ErrorResponse = Readonly<{
-  statusCode: ErrorStatusCode
-
-  message: string
-  errors?: unknown
+type ErrorOptions<
+  S extends ApiErrorStatus,
+  TErrors
+> = Readonly<{
+  statusCode: S
+  message?: string
+  errors?: TErrors
+  headers?: ResponseHeaders
 
   data?: never
   meta?: never
 }>
 
-type ResponsePayload<T> = SuccessResponse<T> | NoContentResponse | ErrorResponse
+type SendResponseOptions<
+  S extends ApiStatus,
+  TData,
+  TMeta,
+  TErrors
+> = S extends ApiSuccessStatus
+  ? SuccessOptions<S, TData, TMeta>
+  : ErrorOptions<Extract<S, ApiErrorStatus>, TErrors>
 
-/* -------------------------------------------------------------------------- */
-/*                                 OVERLOADS                                  */
-/* -------------------------------------------------------------------------- */
+const getDefaultMessage = (statusCode: ApiStatus) => {
+  if (statusCode === 201) return 'Created successfully'
+  if (statusCode === 202) return 'Request accepted'
+  if (statusCode >= 200 && statusCode < 300) return 'Success'
 
-function sendResponse<T>(res: Response, payload: SuccessResponse<T>): void
-
-function sendResponse(res: Response, payload: NoContentResponse): void
-
-function sendResponse(res: Response, payload: ErrorResponse): void
-
-/* -------------------------------------------------------------------------- */
-/*                              IMPLEMENTATION                                */
-/* -------------------------------------------------------------------------- */
-
-function sendResponse<T>(res: Response, payload: ResponsePayload<T>): void {
-  if (res.headersSent) {
-    throw new Error('sendResponse() called after headers were already sent.')
-  }
-
-  switch (payload.statusCode) {
-    case 204:
-      res.status(204).end()
-      return
-
-    case 200:
-    case 201:
-    case 202:
-      res.status(payload.statusCode).json({
-        success: true,
-        message: payload.message ?? 'Success',
-        ...(payload.data !== undefined ? { data: payload.data ?? null } : {}),
-        ...(payload.meta !== undefined ? { meta: payload.meta } : {})
-      } satisfies {
-        success: true
-        message: string
-        data?: T | null
-        meta?: TMeta
-      })
-      return
-
-    case 400:
-    case 401:
-    case 403:
-    case 404:
-    case 405:
-    case 409:
-    case 410:
-    case 422:
-    case 429:
-    case 500:
-    case 502:
-    case 503:
-      res.status(payload.statusCode).json({
-        success: false,
-        message: payload.message,
-        ...(payload.errors !== undefined ? { errors: payload.errors } : {})
-      } satisfies {
-        success: false
-        message: string
-        errors?: unknown
-      })
-      return
-  }
+  return 'Request failed'
 }
 
-export default sendResponse
+export const sendResponse = <
+  const S extends ApiStatus = 200,
+  TData = never,
+  TMeta = never,
+  TErrors = never
+>(
+  c: Context,
+  options?: SendResponseOptions<S, TData, TMeta, TErrors>
+) => {
+  const payload =
+    options ?? ({} as SendResponseOptions<S, TData, TMeta, TErrors>)
+
+  const statusCode = (payload.statusCode ?? 200) as S
+
+  if (statusCode >= 200 && statusCode < 300) {
+    const successPayload = payload as SuccessOptions<
+      S & ApiSuccessStatus,
+      TData,
+      TMeta
+    >
+
+    return c.json(
+      {
+        success: true as const,
+        message:
+          successPayload.message ??
+          getDefaultMessage(statusCode),
+        ...(successPayload.data !== undefined && {
+          data: successPayload.data
+        }),
+        ...(successPayload.meta !== undefined && {
+          meta: successPayload.meta
+        })
+      },
+      {
+        status: statusCode as S & ApiSuccessStatus,
+        headers: successPayload.headers
+      }
+    )
+  }
+
+  const errorPayload = payload as ErrorOptions<
+    S & ApiErrorStatus,
+    TErrors
+  >
+
+  return c.json(
+    {
+      success: false as const,
+      message:
+        errorPayload.message ??
+        getDefaultMessage(statusCode),
+      ...(errorPayload.errors !== undefined && {
+        errors: errorPayload.errors
+      })
+    },
+    {
+      status: statusCode as S & ApiErrorStatus,
+      headers: errorPayload.headers
+    }
+  )
+}
+
+export const sendNoContent = (
+  c: Context,
+  statusCode: 204 | 205 = 204,
+  headers?: ResponseHeaders
+) => {
+  return c.body(null, {
+    status: statusCode,
+    headers
+  })
+}
