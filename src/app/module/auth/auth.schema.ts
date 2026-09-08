@@ -10,7 +10,8 @@ export const registerSchema = z.object({
   email: z.email(),
   password: z.string().min(8).max(72),
   phone: z.string().trim().optional(),
-  address: z.string().trim().optional()
+  address: z.string().trim().optional(),
+  profileImage: z.string().trim().optional()
 })
 
 export const googleLoginSchema = z.object({
