@@ -99,7 +99,7 @@ const normalizePrismaError = (
 export const globalErrorHandler: ErrorHandler = (error, c) => {
   if (isAppError(error)) {
     return sendResponse(c, {
-      statusCode: error.status,
+      statusCode: error.statusCode,
       message: error.message,
       ...(error.errors !== undefined && {
         errors: error.errors
