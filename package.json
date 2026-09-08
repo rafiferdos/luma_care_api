@@ -47,6 +47,8 @@
     "typescript-eslint": "^8.67.0"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@hono/standard-validator": "^0.4.0",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "@types/bcrypt": "^6.0.0",
@@ -56,8 +58,10 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "google-auth-library": "^11.0.2",
+    "hono": "^4.13.7",
     "http-status": "^2.1.0",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "zod": "^4.5.4"
   }
 }
