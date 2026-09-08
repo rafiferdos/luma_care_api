@@ -1,5 +1,4 @@
 import { sValidator } from '@hono/standard-validator'
-import { status } from 'http-status'
 
 import { auth } from '@/app/middlewares/auth'
 import { factory } from '@/factory'
@@ -9,6 +8,7 @@ import {
   setAccessTokenCookie,
   setAuthCookies
 } from '@/utils/authCookie'
+import { UNAUTHORIZED } from '@/utils/httpStatus'
 import { sendResponse } from '@/utils/sendResponse'
 import { validationHook } from '@/utils/validation'
 
@@ -54,7 +54,7 @@ authRoutes.post('/refresh-token', async (c) => {
   const refreshToken = getRefreshTokenCookie(c)
 
   if (!refreshToken) {
-    throw new AppError(status.UNAUTHORIZED, 'Refresh token not found')
+    throw new AppError(UNAUTHORIZED, 'Refresh token not found')
   }
 
   const { accessToken } = await AuthServices.refreshToken(refreshToken)
