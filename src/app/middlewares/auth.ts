@@ -1,5 +1,7 @@
 import status from 'http-status'
 
+import { FORBIDDEN, UNAUTHORIZED } from '@/utils/httpStatus.js'
+
 import {
   type UserRole,
   UserStatus
@@ -76,26 +78,23 @@ export const auth = (...allowedRoles: UserRole[]) =>
     })
 
     if (!user) {
-      throw new AppError(status.UNAUTHORIZED, 'This account no longer exists.')
+      throw new AppError(UNAUTHORIZED, 'This account no longer exists.')
     }
 
     if (user.status === UserStatus.BLOCKED) {
       throw new AppError(
-        status.FORBIDDEN,
+        FORBIDDEN,
         'Your account has been blocked. Please contact support.'
       )
     }
 
     if (user.status === UserStatus.DELETED || user.isDeleted) {
-      throw new AppError(
-        status.FORBIDDEN,
-        'This account is no longer available.'
-      )
+      throw new AppError(FORBIDDEN, 'This account is no longer available.')
     }
 
     if (allowedRoles.length && !allowedRoles.includes(user.role)) {
       throw new AppError(
-        status.FORBIDDEN,
+        FORBIDDEN,
         'You do not have permission to perform this action.'
       )
     }
