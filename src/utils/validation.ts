@@ -1,7 +1,7 @@
 import { flattenErrors } from '@hono/standard-validator'
-import status from 'http-status'
 
 import { AppError } from './appError.js'
+import { UNPROCESSABLE_ENTITY } from './httpStatus.js'
 
 type ValidationResult =
   | Readonly<{
@@ -15,7 +15,7 @@ type ValidationResult =
 export const validationHook = (result: ValidationResult) => {
   if (result.success) return
 
-  throw new AppError(status.UNPROCESSABLE_ENTITY, 'Validation failed', {
+  throw new AppError(UNPROCESSABLE_ENTITY, 'Validation failed', {
     errors: flattenErrors(result.error)
   })
 }
