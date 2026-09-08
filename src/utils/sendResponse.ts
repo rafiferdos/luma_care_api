@@ -10,9 +10,7 @@ type ApiErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode
 type ApiStatus = ApiSuccessStatus | ApiErrorStatus
 
 type ResponseHeaders =
-  | Headers
-  | Record<string, string>
-  | Array<[string, string]>
+  Headers | Record<string, string> | Array<[string, string]>
 
 export type PaginationMeta = Readonly<{
   page: number
@@ -21,11 +19,7 @@ export type PaginationMeta = Readonly<{
   totalPages: number
 }>
 
-type SuccessOptions<
-  S extends ApiSuccessStatus,
-  TData,
-  TMeta
-> = Readonly<{
+type SuccessOptions<S extends ApiSuccessStatus, TData, TMeta> = Readonly<{
   statusCode?: S
   message?: string
   data?: TData | null
@@ -35,10 +29,7 @@ type SuccessOptions<
   errors?: never
 }>
 
-type ErrorOptions<
-  S extends ApiErrorStatus,
-  TErrors
-> = Readonly<{
+type ErrorOptions<S extends ApiErrorStatus, TErrors> = Readonly<{
   statusCode: S
   message?: string
   errors?: TErrors
@@ -48,12 +39,9 @@ type ErrorOptions<
   meta?: never
 }>
 
-type SendResponseOptions<
-  S extends ApiStatus,
-  TData,
-  TMeta,
-  TErrors
-> = [S] extends [ApiErrorStatus]
+type SendResponseOptions<S extends ApiStatus, TData, TMeta, TErrors> = [
+  S
+] extends [ApiErrorStatus]
   ? ErrorOptions<Extract<S, ApiErrorStatus>, TErrors>
   : SuccessOptions<Extract<S, ApiSuccessStatus>, TData, TMeta>
 
@@ -89,9 +77,7 @@ export const sendResponse = <
     return c.json(
       {
         success: true as const,
-        message:
-          successPayload.message ??
-          getDefaultMessage(statusCode),
+        message: successPayload.message ?? getDefaultMessage(statusCode),
         ...(successPayload.data !== undefined && {
           data: successPayload.data
         }),
@@ -106,17 +92,12 @@ export const sendResponse = <
     )
   }
 
-  const errorPayload = payload as ErrorOptions<
-    S & ApiErrorStatus,
-    TErrors
-  >
+  const errorPayload = payload as ErrorOptions<S & ApiErrorStatus, TErrors>
 
   return c.json(
     {
       success: false as const,
-      message:
-        errorPayload.message ??
-        getDefaultMessage(statusCode),
+      message: errorPayload.message ?? getDefaultMessage(statusCode),
       ...(errorPayload.errors !== undefined && {
         errors: errorPayload.errors
       })

@@ -10,7 +10,7 @@ import { AppError } from '@/utils/appError.js'
 import { JwtUtils } from '@/utils/jwt.js'
 
 import {
-    AuthProvider,
+  AuthProvider,
   UserRole,
   UserStatus
 } from '../../../../prisma/generated/prisma/enums.js'
@@ -153,10 +153,7 @@ const getMeFromDB = async (userId: string) => {
 
 const googleLoginIntoDB = async (credential: string) => {
   if (!credential || typeof credential !== 'string') {
-    throw new AppError(
-      status.BAD_REQUEST,
-      'Google credential is required'
-    )
+    throw new AppError(status.BAD_REQUEST, 'Google credential is required')
   }
 
   let payload: TokenPayload | undefined | null
@@ -165,22 +162,12 @@ const googleLoginIntoDB = async (credential: string) => {
   try {
     payload = await verifyGoogleToken(credential)
   } catch {
-    throw new AppError(
-      status.UNAUTHORIZED,
-      'Invalid Google credentials'
-    )
+    throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
   }
 
   // Required claims
-  if (
-    !payload?.sub ||
-    !payload.email ||
-    payload.email_verified !== true
-  ) {
-    throw new AppError(
-      status.UNAUTHORIZED,
-      'Invalid Google credentials'
-    )
+  if (!payload?.sub || !payload.email || payload.email_verified !== true) {
+    throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
   }
 
   const email = payload.email.trim().toLowerCase()
@@ -194,10 +181,7 @@ const googleLoginIntoDB = async (credential: string) => {
 
   // A googleId must never belong to a different email
   if (user && user.email.toLowerCase() !== email) {
-    throw new AppError(
-      status.UNAUTHORIZED,
-      'Invalid Google credentials'
-    )
+    throw new AppError(status.UNAUTHORIZED, 'Invalid Google credentials')
   }
 
   // 2. Fallback to email lookup for an existing account
@@ -249,10 +233,7 @@ const googleLoginIntoDB = async (credential: string) => {
 
   // 4. New Google patient
   if (!user) {
-    const name =
-      payload.name?.trim() ||
-      email.split('@')[0] ||
-      'Patient'
+    const name = payload.name?.trim() || email.split('@')[0] || 'Patient'
 
     user = await prisma.user.create({
       data: {
@@ -283,13 +264,12 @@ const googleLoginIntoDB = async (credential: string) => {
     role: user.role
   }
 
-  const { accessToken, refreshToken } =
-    JwtUtils.createAuthTokens(jwtPayload, {
-      accessSecret: config.jwt_access_secret,
-      accessExpiresIn: config.jwt_access_expires_in,
-      refreshSecret: config.jwt_refresh_secret,
-      refreshExpiresIn: config.jwt_refresh_expires_in
-    })
+  const { accessToken, refreshToken } = JwtUtils.createAuthTokens(jwtPayload, {
+    accessSecret: config.jwt_access_secret,
+    accessExpiresIn: config.jwt_access_expires_in,
+    refreshSecret: config.jwt_refresh_secret,
+    refreshExpiresIn: config.jwt_refresh_expires_in
+  })
 
   return {
     accessToken,

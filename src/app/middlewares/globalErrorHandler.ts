@@ -10,23 +10,15 @@ import config from '../config'
 import { isAppError } from '../../utils/appError'
 import { sendResponse } from '../../utils/sendResponse'
 
-type ErrorStatusCode =
-  | ClientErrorStatusCode
-  | ServerErrorStatusCode
+type ErrorStatusCode = ClientErrorStatusCode | ServerErrorStatusCode
 
 type NormalizedError = Readonly<{
   statusCode: ErrorStatusCode
   message: string
 }>
 
-const toErrorStatusCode = (
-  statusCode: number
-): ErrorStatusCode => {
-  if (
-    Number.isInteger(statusCode) &&
-    statusCode >= 400 &&
-    statusCode <= 599
-  ) {
+const toErrorStatusCode = (statusCode: number): ErrorStatusCode => {
+  if (Number.isInteger(statusCode) && statusCode >= 400 && statusCode <= 599) {
     return statusCode as ErrorStatusCode
   }
 
@@ -104,10 +96,7 @@ const normalizePrismaError = (
   }
 }
 
-export const globalErrorHandler: ErrorHandler = (
-  error,
-  c
-) => {
+export const globalErrorHandler: ErrorHandler = (error, c) => {
   if (isAppError(error)) {
     return sendResponse(c, {
       statusCode: toErrorStatusCode(error.statusCode),
@@ -125,10 +114,7 @@ export const globalErrorHandler: ErrorHandler = (
     })
   }
 
-  if (
-    error instanceof
-    Prisma.PrismaClientKnownRequestError
-  ) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
     const normalized = normalizePrismaError(error)
 
     if (normalized) {
@@ -136,10 +122,7 @@ export const globalErrorHandler: ErrorHandler = (
     }
   }
 
-  if (
-    error instanceof
-    Prisma.PrismaClientInitializationError
-  ) {
+  if (error instanceof Prisma.PrismaClientInitializationError) {
     console.error('[DATABASE INITIALIZATION ERROR]', error)
 
     return sendResponse(c, {
@@ -148,10 +131,7 @@ export const globalErrorHandler: ErrorHandler = (
     })
   }
 
-  if (
-    error instanceof
-    Prisma.PrismaClientValidationError
-  ) {
+  if (error instanceof Prisma.PrismaClientValidationError) {
     console.error('[PRISMA VALIDATION ERROR]', error)
 
     return sendResponse(c, {
@@ -160,10 +140,7 @@ export const globalErrorHandler: ErrorHandler = (
     })
   }
 
-  console.error(
-    `[UNHANDLED ERROR] ${new Date().toISOString()}`,
-    error
-  )
+  console.error(`[UNHANDLED ERROR] ${new Date().toISOString()}`, error)
 
   return sendResponse(c, {
     statusCode: 500,

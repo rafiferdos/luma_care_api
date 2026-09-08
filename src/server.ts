@@ -2,10 +2,10 @@
 // import config from './app/config'
 // import { prisma } from './app/lib/prisma'
 
-import { serve } from "@hono/node-server";
-import app from "./app";
-import config from "./app/config";
-import { prisma } from "./app/lib/prisma";
+import { serve } from '@hono/node-server'
+import app from './app'
+import config from './app/config'
+import { prisma } from './app/lib/prisma'
 
 // const PORT = config.port
 
@@ -32,10 +32,11 @@ const main = async () => {
     await prisma.$connect()
     console.log('Connected to the database successfully.')
 
-    const server = serve({
-      fetch: app.fetch,
-      port
-    },
+    const server = serve(
+      {
+        fetch: app.fetch,
+        port
+      },
       (info) => {
         console.log(`Server is running on port ${info.port}`)
       }
@@ -55,7 +56,6 @@ const main = async () => {
     }
     process.once('SIGINT', () => shutdown('SIGINT'))
     process.once('SIGTERM', () => shutdown('SIGTERM'))
-
   } catch (error) {
     console.error('Error starting the server:', error)
     await prisma.$disconnect()
