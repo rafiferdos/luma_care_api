@@ -6,7 +6,11 @@ import { AuthServices } from './auth.service'
 import { sendResponse } from '@/utils/sendResponse'
 import { status } from 'http-status'
 import { AppError } from '@/utils/appError'
-import { getRefreshTokenCookie, setAuthCookies } from '@/utils/authCookie'
+import {
+  getRefreshTokenCookie,
+  setAccessTokenCookie,
+  setAuthCookies
+} from '@/utils/authCookie'
 import { auth } from '@/app/middlewares/auth'
 
 const authRoutes = factory.createApp()
@@ -52,7 +56,7 @@ authRoutes.post('/refresh-token', async (c) => {
   }
 
   const { accessToken } = await AuthServices.refreshToken(refreshToken)
-  setAuthCookies(c, accessToken)
+  setAccessTokenCookie(c, accessToken)
 
   return sendResponse(c, {
     message: 'Access token refreshed successfully',
