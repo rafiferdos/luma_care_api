@@ -7,6 +7,7 @@ import config from '@/app/config/index.js'
 import { verifyGoogleToken } from '@/app/lib/googleAuth.js'
 import { prisma } from '@/app/lib/prisma.js'
 import { AppError } from '@/utils/appError.js'
+import { CONFLICT } from '@/utils/httpStatus.js'
 import { JwtUtils } from '@/utils/jwt.js'
 
 import {
@@ -94,8 +95,7 @@ const registerUserIntoDB = async (payload: RegisterInput) => {
   const user = await prisma.user.findUnique({
     where: { email }
   })
-  if (user)
-    throw new AppError(status.CONFLICT, 'User with this email already exists')
+  if (user) throw new AppError(CONFLICT, 'User with this email already exists')
 
   const passwordHash = await bcrypt.hash(
     password,
