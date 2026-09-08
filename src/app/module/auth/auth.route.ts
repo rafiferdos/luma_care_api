@@ -1,17 +1,19 @@
-import { factory } from '@/factory'
 import { sValidator } from '@hono/standard-validator'
-import { googleLoginSchema, loginSchema, registerSchema } from './auth.schema'
-import { validationHook } from '@/utils/validation'
-import { AuthServices } from './auth.service'
-import { sendResponse } from '@/utils/sendResponse'
 import { status } from 'http-status'
+
+import { auth } from '@/app/middlewares/auth'
+import { factory } from '@/factory'
 import { AppError } from '@/utils/appError'
 import {
   getRefreshTokenCookie,
   setAccessTokenCookie,
   setAuthCookies
 } from '@/utils/authCookie'
-import { auth } from '@/app/middlewares/auth'
+import { sendResponse } from '@/utils/sendResponse'
+import { validationHook } from '@/utils/validation'
+
+import { googleLoginSchema, loginSchema, registerSchema } from './auth.schema'
+import { AuthServices } from './auth.service'
 
 const authRoutes = factory.createApp()
 

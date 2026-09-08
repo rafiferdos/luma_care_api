@@ -3,7 +3,7 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 
 import config from '@/app/config'
 
-import { toSeconds, type TimeUnit } from './time'
+import { type TimeUnit, toSeconds } from './time'
 
 const AUTH_COOKIE_NAMES = {
   access: 'access_token',

@@ -7,10 +7,10 @@ import {
 import type { AuthUser } from '../../factory.js'
 import { factory } from '../../factory.js'
 import { AppError } from '../../utils/appError.js'
+import { getAccessTokenCookie } from '../../utils/authCookie.js'
 import JwtUtils from '../../utils/jwt.js'
 import config from '../config/index.js'
 import { prisma } from '../lib/prisma.js'
-import { getAccessTokenCookie } from '../../utils/authCookie.js'
 
 type AccessTokenPayload = {
   id: string

@@ -5,8 +5,8 @@ import {
   globalErrorHandler,
   notFoundHandler
 } from './app/middlewares/globalErrorHandler'
-import { factory } from './factory'
 import { AuthRoutes } from './app/module/auth/auth.route'
+import { factory } from './factory'
 
 const app = factory.createApp()
 

@@ -6,9 +6,9 @@ import type {
 } from 'hono/utils/http-status'
 
 import { Prisma } from '../../../prisma/generated/prisma/client'
-import config from '../config'
 import { isAppError } from '../../utils/appError'
 import { sendResponse } from '../../utils/sendResponse'
+import config from '../config'
 
 type ErrorStatusCode = ClientErrorStatusCode | ServerErrorStatusCode
 
