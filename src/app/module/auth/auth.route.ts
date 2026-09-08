@@ -4,11 +4,13 @@ import config from '@/app/config'
 import { factory } from '@/factory'
 import { sValidator } from '@hono/standard-validator'
 import type { Context } from 'hono'
-import { setCookie } from 'hono/cookie'
-import { loginSchema } from './auth.schema'
+import { getCookie, setCookie } from 'hono/cookie'
+import { loginSchema, registerSchema } from './auth.schema'
 import { validationHook } from '@/utils/validation'
 import { AuthServices } from './auth.service'
 import { sendResponse } from '@/utils/sendResponse'
+import { status } from 'http-status'
+import { AppError } from '@/utils/appError'
 
 // import { AuthControllers } from './auth.controller.js'
 // import { UserRole } from '../../../../prisma/generated/prisma/browser.js'
@@ -79,3 +81,44 @@ authRoutes.post(
     })
   }
 )
+
+authRoutes.post(
+  '/register',
+  sValidator('json', registerSchema, validationHook),
+  async (c) => {
+    const payload = c.req.valid('json')
+
+    const user = await AuthServices.register(payload)
+
+    return sendResponse(c, {
+      statusCode: 201,
+      message: 'User registered successfully',
+      data: user
+    })
+  }
+)
+
+authRoutes.post('/refresh-token', async (c) => {
+  const refreshToken = getCookie(c, 'refresh_token')
+
+  if (!refreshToken) {
+    throw new AppError(status.UNAUTHORIZED, 'Refresh token not found')
+  }
+  const { accessToken } = await AuthServices.refreshToken(refreshToken)
+  setAccessTokenCookie(c, accessToken)
+
+  return sendResponse(c, {
+    message: 'Access token refreshed successfully',
+    data: {
+      accessToken
+    }
+  })
+})
+
+authRoutes.get('/me', async (c) => {
+  const user = await AuthServices.getMe(c.var.user.id)
+
+  return sendResponse(c, {
+    data: user
+  })
+})
