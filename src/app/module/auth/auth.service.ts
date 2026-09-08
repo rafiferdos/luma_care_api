@@ -15,11 +15,12 @@ import {
   UserStatus
 } from '../../../../prisma/generated/prisma/enums.js'
 import type {
-  ILoginCredentials,
-  IRegisterUserPayload
-} from './auth.interface.js'
+  GoogleLoginInput,
+  LoginInput,
+  RegisterInput
+} from './auth.schema.js'
 
-const loginUserIntoDB = async (payload: ILoginCredentials) => {
+const loginUserIntoDB = async (payload: LoginInput) => {
   const { email, password } = payload
 
   const user = await prisma.user.findUniqueOrThrow({
@@ -91,8 +92,8 @@ const refreshToken = async (token: string) => {
   return { accessToken }
 }
 
-const registerUserIntoDB = async (payload: IRegisterUserPayload) => {
-  const { name, email, password, phone, role, address } = payload
+const registerUserIntoDB = async (payload: RegisterInput) => {
+  const { name, email, password, phone, address, profileImage } = payload
 
   const user = await prisma.user.findUnique({
     where: { email }
@@ -105,16 +106,16 @@ const registerUserIntoDB = async (payload: IRegisterUserPayload) => {
     Number(config.bcrypt_salt_rounds)
   )
 
-  if (payload.role === UserRole.SUPER_ADMIN) {
-    const adminExists = await prisma.user.findFirst({
-      where: { role: UserRole.SUPER_ADMIN }
-    })
-    if (adminExists)
-      throw new AppError(
-        status.CONFLICT,
-        'An super admin already exists. You cannot create multiple super admin accounts.'
-      )
-  }
+  // if (payload.role === UserRole.SUPER_ADMIN) {
+  //   const adminExists = await prisma.user.findFirst({
+  //     where: { role: UserRole.SUPER_ADMIN }
+  //   })
+  //   if (adminExists)
+  //     throw new AppError(
+  //       status.CONFLICT,
+  //       'An super admin already exists. You cannot create multiple super admin accounts.'
+  //     )
+  // }
 
   const newUser = await prisma.user.create({
     data: {
@@ -122,8 +123,11 @@ const registerUserIntoDB = async (payload: IRegisterUserPayload) => {
       email,
       password: passwordHash,
       phone,
-      role,
-      address
+      address,
+      profileImage,
+      role: UserRole.PATIENT,
+      authProvider: AuthProvider.CREDENTIALS,
+      isEmailVerified: false
     }
   })
 
