@@ -1,7 +1,10 @@
 import type { NextFunction, Request, Response } from 'express'
 import status from 'http-status'
 
-import type { UserRole } from '../../../prisma/generated/prisma/enums'
+import {
+  type UserRole,
+  UserStatus
+} from '../../../prisma/generated/prisma/enums'
 import { AppError } from '../../utils/appError'
 import catchAsync from '../../utils/catchAsync'
 import JwtUtils from '../../utils/jwt'
@@ -76,7 +79,7 @@ export const auth = (...roles: UserRole[]) =>
     if (!user)
       throw new AppError(status.UNAUTHORIZED, 'This account no longer exists.')
 
-    if (user.status === 'BANNED')
+    if (user.status === UserStatus.BLOCKED)
       throw new AppError(
         status.FORBIDDEN,
         'Your account has been banned. Please contact support.'
