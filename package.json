@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:all": "prisma generate && prisma migrate dev && prisma studio"
   },
   "keywords": [],
   "author": "",
