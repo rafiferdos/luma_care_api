@@ -10,7 +10,7 @@ type TAppErrorOptions = {
 
 export class AppError extends Error {
   readonly statusCode: number
-  readonly isOperational: true = true
+  readonly isOperational: true = true as const
   readonly errors?: unknown
 
   constructor(
