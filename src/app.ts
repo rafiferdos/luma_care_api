@@ -6,6 +6,7 @@ import {
   notFoundHandler
 } from './app/middlewares/globalErrorHandler'
 import { factory } from './factory'
+import { AuthRoutes } from './app/module/auth/auth.route'
 
 const app = factory.createApp()
 
@@ -23,6 +24,8 @@ app.get('/', (c) => {
     message: 'Welcome to LumaCare API'
   })
 })
+
+app.route('/api/v1/auth', AuthRoutes)
 
 app.notFound(notFoundHandler)
 app.onError(globalErrorHandler)
