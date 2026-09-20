@@ -1,5 +1,3 @@
-import { sValidator } from '@hono/standard-validator'
-
 import { auth } from '@/app/middlewares/auth'
 import { factory } from '@/factory'
 import { AppError } from '@/utils/appError'
@@ -10,45 +8,40 @@ import {
 } from '@/utils/authCookie'
 import { UNAUTHORIZED } from '@/utils/httpStatus'
 import { sendResponse } from '@/utils/sendResponse'
-import { validationHook } from '@/utils/validation'
+import { validateRequest } from '@/utils/validation'
 
 import { googleLoginSchema, loginSchema, registerSchema } from './auth.schema'
 import { AuthServices } from './auth.service'
 
 const authRoutes = factory.createApp()
 
-authRoutes.post(
-  '/login',
-  sValidator('json', loginSchema, validationHook),
-  async (c) => {
-    const payload = c.req.valid('json')
-    const result = await AuthServices.login(payload)
-    setAuthCookies(c, result)
-    return sendResponse(c, {
-      message: 'Login successful',
-      data: {
-        accessToken: result.accessToken,
-        user: result.user
-      }
-    })
-  }
-)
+authRoutes.post('/login', validateRequest(loginSchema), async (c) => {
+  const payload = c.req.valid('json')
 
-authRoutes.post(
-  '/register',
-  sValidator('json', registerSchema, validationHook),
-  async (c) => {
-    const payload = c.req.valid('json')
+  const result = await AuthServices.login(payload)
 
-    const user = await AuthServices.register(payload)
+  setAuthCookies(c, result)
 
-    return sendResponse(c, {
-      statusCode: 201,
-      message: 'User registered successfully',
-      data: user
-    })
-  }
-)
+  return sendResponse(c, {
+    message: 'Login successful',
+    data: {
+      accessToken: result.accessToken,
+      user: result.user
+    }
+  })
+})
+
+authRoutes.post('/register', validateRequest(registerSchema), async (c) => {
+  const payload = c.req.valid('json')
+
+  const user = await AuthServices.register(payload)
+
+  return sendResponse(c, {
+    statusCode: 201,
+    message: 'User registered successfully',
+    data: user
+  })
+})
 
 authRoutes.post('/refresh-token', async (c) => {
   const refreshToken = getRefreshTokenCookie(c)
@@ -76,24 +69,20 @@ authRoutes.get('/me', auth(), async (c) => {
   })
 })
 
-authRoutes.post(
-  '/google',
-  sValidator('json', googleLoginSchema, validationHook),
-  async (c) => {
-    const { credential } = c.req.valid('json')
+authRoutes.post('/google', validateRequest(googleLoginSchema), async (c) => {
+  const { credential } = c.req.valid('json')
 
-    const result = await AuthServices.googleLogin(credential)
+  const result = await AuthServices.googleLogin(credential)
 
-    setAuthCookies(c, result)
+  setAuthCookies(c, result)
 
-    return sendResponse(c, {
-      message: 'Logged in with Google successfully',
-      data: {
-        accessToken: result.accessToken,
-        user: result.user
-      }
-    })
-  }
-)
+  return sendResponse(c, {
+    message: 'Logged in with Google successfully',
+    data: {
+      accessToken: result.accessToken,
+      user: result.user
+    }
+  })
+})
 
 export const AuthRoutes = authRoutes
